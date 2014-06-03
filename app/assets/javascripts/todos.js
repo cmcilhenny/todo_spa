@@ -4,13 +4,17 @@ $(function(){
     // console.log(myTest)
     //   $("#testCon").append(myTest);
 
+// setting App as empty hash
     var App = {}; 
+    // setting App as global variable.
     window.App = App;
 
+// setting an empty array called todos 
     var todos = [];
-    
+    // setting a model on the App. You can do this because the App is an empty hash.
     App.models = todos;
 
+// CM..function to find todo items (also called model). WHy not remove the foundModel item and return item within the loop? 
     App.findModel = function(id){
         var foundModel;
        $(this.models).each( function(index, item){
@@ -60,12 +64,66 @@ $(function(){
 
     App.saveModel = function(model, callback){
         // DO SOME STUFF HERE TO PERSIST DATA
-        callback(model);
+        var title = $("#todo_title").val();
+
+        $.ajax({
+            url: '/todos',
+            method: "POST",
+            data: {
+                "todo": {
+                    "title": title
+                }
+            },
+        dataType: "json",
+        success: function(data) {
+            // console.log(data);
+            $("#todo_title").val("");
+            // putting callback into success function because at this point the model has an id, which can be reflected in the DOM.
+            callback(data);
+            },
+        error: function(data) {
+            console.log("Error: ");
+            console.log(data);
+            }
+        });
+        // callback(model);
     };
 
     App.updateItem = function(model, callback){
-        // DO SOMETHING HERE
-        callback(model);  
+        // DO SOMETHING HERE. add post here this.urls.index.path
+        $.ajax({
+            url: this.urls.update.path + model.id,
+            method: this.urls.update.method,
+            data: {
+                "todo": {
+                    "completed": model.completed
+                }
+            },
+        dataType: "json",
+        success: function(data) {
+            console.log(data);
+            callback(model);
+            },
+        error: function(data) {
+            console.log("Error: ");
+            console.log(data);
+            }
+        });
+    };
+
+    App.deleteItem = function(model, callback){
+        $.ajax({
+            url: '/todos/' + model.id,
+            method: "DELETE",
+        success: function(data) {
+            console.log(data);
+            callback(model);
+            },
+        error: function(data) {
+            console.log("Error: ");
+            console.log(data);
+            }
+        });
     };
 
     App.doThis = function(func){
@@ -75,7 +133,8 @@ $(function(){
 
     App.urls = {
         index : { path: '/todos.json', method : 'get'},
-        create : { path : '/todos.json', method : 'post'}
+        create : { path : '/todos.json', method : 'post'},
+        update : { path: '/todos/', method : 'post'}
     };
 
     App.getItems = function(callback) {
@@ -102,7 +161,8 @@ $(function(){
         
     });
 
-
+// why not just pass App as an argument into the function: 
+    // function(App) {...}
     App.doThis(function(){
         var _this = this;
         
@@ -114,11 +174,20 @@ $(function(){
                 console.log("FIRED!!!")
                var view = this;
                var todo = _this.findModel(id);
+               // updated todo to _this to fix the bug in homework question #2. but then this worked??
                todo.completed = !todo.completed;
+               // console.log(_this)
                _this.updateItem(todo, function(data){
                     $(view).toggleClass("done-true");
                });
            }
+            if(event.target.id === "removeTodo") {
+                var view = this;
+                var todo = _this.findModel(id);
+                _this.deleteItem(todo, function(data){
+                    console.log(data);
+                });
+            }
         });
     });
 
